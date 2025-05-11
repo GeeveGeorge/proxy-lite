@@ -1,6 +1,7 @@
 import asyncio
 import base64
 from io import BytesIO
+import os
 
 import streamlit as st
 from PIL import Image
@@ -9,6 +10,9 @@ from proxy_lite import Runner, RunnerConfig
 
 
 def get_user_config(config_expander):
+    # Detect if running in Streamlit Cloud
+    is_cloud = os.environ.get('STREAMLIT_SERVER_HEADLESS', 'false').lower() == 'true'
+    
     config = {
         "environment": {
             "name": "webbrowser",
@@ -20,7 +24,7 @@ def get_user_config(config_expander):
             "include_poi_text": True,
             "homepage": "https://www.google.com",
             "keep_original_image": False,
-            "headless": False,  # without proxies headless mode often results in getting bot blocked
+            "headless": True if is_cloud else False,  # Force headless mode in cloud environment
         },
         "solver": {
             "name": "simple",
@@ -75,6 +79,14 @@ def get_user_config(config_expander):
                 step=0.5,
                 help="Delay before taking screenshots",
             )
+            
+            # Only show headless option if not in cloud environment
+            if not is_cloud:
+                config["environment"]["headless"] = st.checkbox(
+                    "Headless Mode",
+                    value=config["environment"]["headless"],
+                    help="Run browser in headless mode (no visible UI)",
+                )
 
         st.subheader("Advanced Settings")
         config["task_timeout"] = st.number_input(
