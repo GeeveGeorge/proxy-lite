@@ -234,7 +234,7 @@ def main():
                     run_task_async(
                         task,
                         status_placeholder,
-                        action_placeholder,
+                        action_placeholde
                         environment_placeholder,
                         image_placeholder,
                         history_placeholder,
