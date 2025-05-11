@@ -13,6 +13,7 @@ from pydantic import Field
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_exponential
 
 from proxy_lite.browser.bounding_boxes import POI, BoundingBox, Point, annotate_bounding_boxes
+from proxy_lite.browser.browser_config import get_cloud_browser_args, is_cloud_environment
 from proxy_lite.logger import logger
 
 SELF_CONTAINED_TAGS = [
@@ -100,7 +101,14 @@ class BrowserSession:
         self._exit_stack = AsyncExitStack()
         self.playwright = await async_playwright().start()
 
-        self.browser = await self.playwright.chromium.launch(headless=self.headless)
+        # Use cloud-specific browser launch args if in cloud environment
+        browser_args = {}
+        if is_cloud_environment():
+            browser_args["args"] = get_cloud_browser_args()
+            self.headless = True  # Force headless mode in cloud
+            logger.info("Launching browser in cloud environment with special arguments")
+        
+        self.browser = await self.playwright.chromium.launch(headless=self.headless, **browser_args)
         self.context = await self.browser.new_context(
             viewport={"width": self.viewport_width, "height": self.viewport_height},
         )
